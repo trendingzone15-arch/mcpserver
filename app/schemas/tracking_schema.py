@@ -1,20 +1,69 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 
-class LastCheckpointSchema(BaseModel):
-    message: Optional[str] = None
-    location: Optional[str] = None
-    checkpoint_time: Optional[str] = None
+class CustomerSchema(BaseModel):
+    customerId: str
+    name: str
+    phone: str
+    email: str
+
+
+class LiveLocationSchema(BaseModel):
+    latitude: float
+    longitude: float
+    address: str
+    speed: Optional[float] = None
+    heading: Optional[str] = None
+    lastUpdated: str
+
+class TrackingHistorySchema(BaseModel):
+    status: str
+    timestamp: str
+    location: str
+    latitude: float
+    longitude: float
+    description: str
+
+
+class DestinationSchema(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class MapSchema(BaseModel):
+    googleMapsUrl: str
+    destination: DestinationSchema
+
+
+class ShipmentDataSchema(BaseModel):
+    shipmentId: str
+    trackingNumber: str
+    orderId: str
+
+    status: str
+    statusCode: str
+
+    estimatedDelivery: Optional[str] = None
+
+    customer: CustomerSchema
+
+    liveLocation: LiveLocationSchema
+
+    trackingHistory: List[TrackingHistorySchema]
+
+    map: MapSchema
+
 
 
 class TrackingResponseSchema(BaseModel):
     success: bool
-    tracking_number: str
-    tracking_id: Optional[str] = None
-    status: Optional[str] = None
-    subtag: Optional[str] = None
-    courier: Optional[str] = None
-    eta: Optional[str] = None
-    last_checkpoint: Optional[LastCheckpointSchema] = None
+
+    tool: Optional[str] = "get_tracking"
+
     message: Optional[str] = None
+
+    timestamp: Optional[str] = None
+
+    data: Optional[ShipmentDataSchema] = None
+

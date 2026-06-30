@@ -1,40 +1,52 @@
-from app.services.aftership_service import get_tracking_from_aftership
-from app.schemas.tracking_schema import TrackingResponseSchema, LastCheckpointSchema
+from datetime import datetime
+
+from app.services.aftership_service import get_tracking_from_shipment_api
+
+from app.schemas.tracking_schema import (
+    TrackingResponseSchema,
+    ShipmentDataSchema,
+)
 
 
-async def get_tracking(tracking_number: str, slug: str):
+async def get_tracking(tracking_number: str):
+    """
+    Fetch shipment tracking details.
+
+    Args:
+        tracking_number (str): Shipment tracking number.
+
+    Returns:
+        dict: Standardized tracking response.
+    """
+
     try:
-        data = await get_tracking_from_aftership(
-            tracking_number=tracking_number,
-            slug=slug
+        response = await get_tracking_from_shipment_api(
+            tracking_number=tracking_number
         )
 
-        # AfterShip response structure
-        tracking = data.get("data", {}).get("tracking", {})
+        shipment = response.get("data")
 
-        checkpoints = tracking.get("checkpoints", [])
-        latest_checkpoint = checkpoints[0] if checkpoints else {}
+        if not shipment:
+            return TrackingResponseSchema(
+                success=False,
+                tool="get_tracking",
+                message="Tracking information not found.",
+                timestamp=datetime.utcnow().isoformat() + "Z",
+            ).model_dump()
 
-        response = TrackingResponseSchema(
+        return TrackingResponseSchema(
             success=True,
-            tracking_number=tracking.get("tracking_number") or tracking_number,
-            tracking_id=tracking.get("id"),
-            status=tracking.get("tag"),
-            subtag=tracking.get("subtag"),
-            courier=tracking.get("slug"),
-            eta=tracking.get("expected_delivery"),
-            last_checkpoint=LastCheckpointSchema(
-                message=latest_checkpoint.get("message"),
-                location=latest_checkpoint.get("location"),
-                checkpoint_time=latest_checkpoint.get("checkpoint_time"),
-            ),
-        )
-
-        return response.model_dump()
+            tool="get_tracking",
+            message="Shipment tracking retrieved successfully.",
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            data=ShipmentDataSchema(**shipment),
+        ).model_dump()
 
     except Exception as e:
+
         return TrackingResponseSchema(
             success=False,
-            tracking_number=tracking_number,
-            message=f"Failed to fetch tracking details: {str(e)}"
+            tool="get_tracking",
+            message=f"Failed to fetch tracking details: {str(e)}",
+            timestamp=datetime.utcnow().isoformat() + "Z",
         ).model_dump()
