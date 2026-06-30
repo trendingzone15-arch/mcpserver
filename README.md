@@ -374,7 +374,7 @@ That's all.
 
 # Future Roadmap
 
-- Rate Limiting
+
 - JWT Authentication
 - Tool Permissions
 - Role Based Access
